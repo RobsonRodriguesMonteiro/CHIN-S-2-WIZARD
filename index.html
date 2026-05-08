@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chinês 2 Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --text-main: #1d1d1f;
+            --text-accent: #0066cc; 
+            --text-muted: #86868b;
+            --text-teal: #0d9488;
+        }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; padding: 0;
+            background-color: #f5f5f7;
+            background-image: 
+                radial-gradient(at 20% 0%, hsla(190, 100%, 85%, 0.9) 0px, transparent 50%),
+                radial-gradient(at 80% 10%, hsla(210, 100%, 88%, 0.8) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, hsla(160, 100%, 82%, 0.9) 0px, transparent 50%),
+                radial-gradient(at 10% 90%, hsla(250, 100%, 90%, 0.8) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, hsla(280, 100%, 92%, 0.6) 0px, transparent 60%);
+            background-size: 200% 200%;
+            animation: tahoeShift 25s ease-in-out infinite alternate;
+            color: var(--text-main);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @keyframes tahoeShift {
+            0% { background-position: 0% 0%; }
+            50% { background-position: 100% 100%; }
+            100% { background-position: 0% 0%; }
+        }
+
+        .chinese-text { font-family: 'Noto Sans SC', sans-serif; }
+
+        /* VIEW NAVIGATION CLASSES */
+        .view-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), backdrop-filter 0.5s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .view-hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
+        .view-active { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 10; }
+
+        /* APP ICONS */
+        .app-icon {
+            border-radius: 22.5%;
+            box-shadow: 
+                0 15px 30px rgba(0, 0, 0, 0.1),
+                inset 0 1px 1px rgba(255, 255, 255, 0.9),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .app-icon:active { transform: scale(0.95); }
+        
+        .glass-folder-icon {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.3) 100%);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        /* FOLDER OVERLAY GLASS */
+        .folder-overlay {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(50px) saturate(200%);
+            -webkit-backdrop-filter: blur(50px) saturate(200%);
+        }
+        .folder-container {
+            width: 90%; max-width: 800px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 40px; padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 1);
+        }
+        .lesson-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 28px; padding: 24px; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,1);
+        }
+        .lesson-card:hover { transform: translateY(-4px) scale(1.02); background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4)); box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,1); }
+
+        /* APP MAIN INTERFACE GLASS */
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.3) 100%);
+            backdrop-filter: blur(48px) saturate(200%);
+            -webkit-backdrop-filter: blur(48px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.08), inset 0 1px 1.5px rgba(255, 255, 255, 0.9), inset 0 -1px 1px rgba(255, 255, 255, 0.2);
+        }
+        .glass-inner {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.15) 100%);
+            backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+        }
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.35); backdrop-filter: blur(20px) saturate(150%); border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); color: var(--text-main); cursor: pointer;
+        }
+        .glass-btn:hover { transform: translateY(-1px) scale(1.01); background: rgba(255, 255, 255, 0.55); border-color: rgba(255, 255, 255, 0.9); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06), inset 0 1px 1px rgba(255, 255, 255, 1); color: var(--text-teal); }
+        .glass-btn-primary { background: linear-gradient(135deg, rgba(204, 251, 241, 0.6) 0%, rgba(204, 251, 241, 0.3) 100%); border: 1px solid rgba(255, 255, 255, 0.8); color: var(--text-teal); font-weight: 700; box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.9); transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+        
+        .list-item-glass { transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: inset 0 1px 1px rgba(255,255,255,0.4); color: var(--text-main); }
+        .list-item-glass:hover { background: rgba(255, 255, 255, 0.4); border-color: rgba(255, 255, 255, 0.7); }
+        .list-item-glass.active { background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 1px rgba(255,255,255,1); transform: scale(1.02); position: relative; }
+        .list-item-glass.active::before { content: ''; position: absolute; left: -1px; top: 10%; height: 80%; width: 4px; background: var(--text-accent); border-radius: 4px; }
+
+        .mode-tab { transition: all 0.3s ease; border: 1px solid transparent; }
+        .mode-tab:hover { background: rgba(255,255,255,0.3); }
+        .mode-tab.active { background: rgba(255, 255, 255, 0.75); color: var(--text-accent); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255,255,255,0.9); border: 1px solid rgba(255, 255, 255, 0.9); font-weight: 700; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
+
+        .cat-header { cursor: pointer; transition: all 0.2s ease; font-weight: 700; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; }
+        .cat-header:hover { color: var(--text-accent); }
+        .cat-list { transition: max-height 0.4s ease-out, opacity 0.4s ease; overflow: hidden; opacity: 1; max-height: 8000px; display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1rem; }
+        .cat-list.collapsed { max-height: 0; opacity: 0; margin-bottom: 0; }
+        
+        .drawing-board-container { width: 280px; height: 280px; border-radius: 1.5rem; position: relative; background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1)); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: inset 0 4px 20px rgba(0,0,0,0.02), 0 15px 35px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.9); overflow: hidden; flex-shrink: 0; transition: background-size 0.3s ease; }
+        .grid-bg-standard { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280"><rect x="15" y="15" width="250" height="250" fill="none" stroke="%2386868b" stroke-width="1.5" stroke-opacity="0.3" rx="8"/><line x1="15" y1="15" x2="265" y2="265" stroke="%2386868b" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/><line x1="265" y1="15" x2="15" y2="265" stroke="%2386868b" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/><line x1="140" y1="15" x2="140" y2="265" stroke="%2386868b" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/><line x1="15" y1="140" x2="265" y2="140" stroke="%2386868b" stroke-width="1" stroke-dasharray="4,4" opacity="0.3"/></svg>'); background-size: cover; background-position: center; }
+        .drawing-board-container svg { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; z-index: 10; cursor: crosshair; }
+        
+        .sidebar-transition { transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease; }
+        @media (min-width: 768px) { .desktop-closed { width: 0 !important; opacity: 0 !important; border-width: 0 !important; overflow: hidden !important; padding: 0 !important;} }
+        input::placeholder { color: #86868b; }
+        input:focus { background: rgba(255,255,255,0.8) !important; box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2); }
+    </style>
+</head>
+<body>
+
+    <div id="view-home" class="view-layer view-active flex-col justify-center items-center">
+        <div class="flex flex-col items-center gap-5 cursor-pointer group" onclick="openFolder()">
+            <div class="app-icon glass-folder-icon w-28 h-28 md:w-36 md:h-36 transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] border-2">
+                <div class="grid grid-cols-2 gap-2 p-2.5 w-full h-full">
+                    <div class="w-full h-full bg-teal-500/80 rounded-2xl shadow-sm"></div>
+                    <div class="w-full h-full bg-blue-500/80 rounded-2xl shadow-sm"></div>
+                    <div class="w-full h-full bg-purple-500/80 rounded-2xl shadow-sm"></div>
+                    <div class="w-full h-full bg-rose-500/80 rounded-2xl shadow-sm"></div>
+                </div>
+            </div>
+            <span class="text-2xl font-bold text-slate-800/90 tracking-wide" style="text-shadow: 0 2px 8px rgba(255,255,255,0.9);">Chinês 2 Lab</span>
+        </div>
+    </div>
+
+    <div id="view-folder" class="view-layer view-hidden folder-overlay">
+        <button onclick="goHome()" class="absolute top-8 left-8 p-3 rounded-full bg-white/30 backdrop-blur-md border border-white/60 text-slate-700 hover:bg-white/50 transition shadow-sm z-50">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+        <div class="folder-container flex flex-col items-center">
+            <h2 class="text-3xl font-bold text-slate-800 mb-8 tracking-tight">Chinês 2 Lab <span class="text-lg font-medium text-slate-500">/ Conteúdo</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+                <!-- Verbos -->
+                <div class="lesson-card group" onclick="openLesson(1)">
+                    <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-600 flex items-center justify-center mb-4 border border-teal-200 group-hover:scale-110 transition-transform shadow-sm">
+                        <i data-lucide="activity" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-1 chinese-text">动词</h3>
+                    <p class="text-sm text-slate-500 font-semibold tracking-wide uppercase">Verbos</p>
+                </div>
+                <!-- Vocabulário -->
+                <div class="lesson-card group" onclick="openLesson(2)">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 border border-blue-200 group-hover:scale-110 transition-transform shadow-sm">
+                        <i data-lucide="book-open" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-1 chinese-text">生词</h3>
+                    <p class="text-sm text-slate-500 font-semibold tracking-wide uppercase">Vocabulário</p>
+                </div>
+                <!-- Expressões -->
+                <div class="lesson-card group" onclick="openLesson(3)">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4 border border-purple-200 group-hover:scale-110 transition-transform shadow-sm">
+                        <i data-lucide="message-circle" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-1 chinese-text">表达</h3>
+                    <p class="text-sm text-slate-500 font-semibold tracking-wide uppercase">Expressões</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-app" class="view-layer view-hidden p-2 md:p-6">
+        <div class="flex flex-col md:flex-row w-full h-full glass-panel md:rounded-[2.5rem] overflow-hidden relative z-10 shadow-2xl border-white/40">
+            
+            <!-- MOBILE TOP BAR -->
+            <div class="md:hidden flex items-center justify-between p-4 bg-white/30 backdrop-blur-3xl border-b border-white/40 z-20 shrink-0 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="goFolder()" class="p-2 rounded-xl glass-btn text-slate-600">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <h1 id="mobile-lesson-title" class="font-bold text-[#1d1d1f] flex items-center gap-2 text-lg tracking-tight">Categoria</h1>
+                </div>
+                <button type="button" onclick="toggleMobileSidebar()" class="p-2 rounded-xl glass-btn text-slate-600">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Fundo Escurecido do Menu Mobile -->
+            <div id="mobile-overlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/10 backdrop-blur-md z-30 opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"></div>
+
+            <!-- DESKTOP SIDEBAR -->
+            <aside id="sidebar" class="sidebar-transition absolute md:relative z-40 h-full w-[290px] sm:w-[320px] bg-white/20 backdrop-blur-3xl border-r border-white/40 flex flex-col shrink-0 transform -translate-x-full md:translate-x-0 md:w-[340px]">
+                
+                <button type="button" onclick="toggleMobileSidebar()" class="md:hidden absolute top-4 right-4 p-2 rounded-full text-slate-600 bg-white/50 shadow-md border border-white/60 hover:bg-white transition z-50">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+
+                <div class="p-6 border-b border-white/30 w-full min-w-[280px] shrink-0">
+                    <!-- DESKTOP TITLE BAR -->
+                    <div class="hidden md:flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <button type="button" onclick="goFolder()" class="p-2 rounded-xl glass-btn shrink-0" title="Voltar para as Categorias">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <h1 id="desktop-lesson-title" class="text-xl font-bold text-[#1d1d1f] tracking-tight">Categoria</h1>
+                        </div>
+                        <button type="button" onclick="toggleDesktopSidebar()" class="p-2 rounded-xl glass-btn shrink-0">
+                            <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- MENU TABS -->
+                    <div class="glass-inner p-1.5 rounded-2xl flex flex-col gap-1 mb-5">
+                        <button onclick="setMode('practice')" id="tab-practice" class="mode-tab w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 flex items-center gap-3 active">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i> Prática de Traços
+                        </button>
+                        <button onclick="setMode('structure')" id="tab-structure" class="mode-tab w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 flex items-center gap-3">
+                            <i data-lucide="layout-template" class="w-4 h-4"></i> Estruturas
+                        </button>
+                        <button onclick="setMode('strokes')" id="tab-strokes" class="mode-tab w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 flex items-center gap-3">
+                            <i data-lucide="list" class="w-4 h-4"></i> Tabela de Traços
+                        </button>
+                    </div>
+                    
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-[#86868b]"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar palavra, pinyin..." class="w-full bg-white/40 border border-white/60 rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-[#1d1d1f] focus:outline-none transition shadow-inner">
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-4 w-full min-w-[280px] pb-12" id="listContainer"></div>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <main class="flex-1 flex flex-col bg-transparent overflow-y-auto overflow-x-hidden relative">
+                
+                <button type="button" id="btn-reopen-desktop" onclick="toggleDesktopSidebar()" class="hidden absolute top-6 left-6 p-3 rounded-xl glass-btn z-10 transition">
+                    <i data-lucide="panel-left-open" class="w-5 h-5"></i>
+                </button>
+
+                <div class="flex-1 p-4 md:p-10 flex flex-col max-w-4xl mx-auto w-full justify-center">
+                    
+                    <div class="glass-inner rounded-3xl p-6 md:p-8 mb-8 shrink-0 z-10 relative">
+
+                        <div id="header-words" class="flex flex-col">
+                            <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+                                <div>
+                                    <div class="flex items-end gap-3 md:gap-4 mb-2 flex-wrap">
+                                        <h2 id="word-hanzi" class="text-4xl md:text-5xl chinese-text font-bold text-[#1d1d1f] leading-none tracking-tight"></h2>
+                                        <button type="button" onclick="playAudioText('word-hanzi')" class="text-teal-600 p-2 rounded-xl glass-btn transition" title="Ouvir palavra">
+                                            <i data-lucide="volume-2" class="w-6 h-6"></i>
+                                        </button>
+                                        <span id="word-pinyin" class="text-xl md:text-2xl text-[#0066cc] font-semibold mb-1 ml-1 tracking-wide"></span>
+                                    </div>
+                                    <p id="word-trans" class="text-base md:text-lg text-[#86868b] font-medium uppercase tracking-widest"></p>
+                                </div>
+                                <span id="word-category" class="px-4 py-1.5 bg-white/50 text-[#1d1d1f] text-xs font-bold rounded-full uppercase tracking-widest border border-white/80 whitespace-nowrap shadow-sm"></span>
+                            </div>
+
+                            <div id="grammar-container" class="mt-6 p-5 glass-panel rounded-2xl hidden relative bg-purple-50/30 border-purple-200/50">
+                                <p class="text-xs font-bold text-purple-700 uppercase mb-3 flex items-center gap-1.5"><i data-lucide="book" class="w-4 h-4"></i> Nota Gramatical</p>
+                                <p id="grammar-text" class="text-sm md:text-base text-[#1d1d1f] leading-relaxed"></p>
+                            </div>
+
+                            <div id="example-container" class="mt-6 p-5 glass-panel rounded-2xl hidden relative border-teal-200/50 bg-teal-50/20">
+                                <button type="button" onclick="playAudioText('example-ch')" class="absolute top-4 right-4 text-[#86868b] hover:text-teal-600 p-2 rounded-lg glass-btn transition" title="Ouvir exemplo">
+                                    <i data-lucide="volume-2" class="w-4 h-4"></i>
+                                </button>
+                                <p class="text-xs font-bold text-teal-700 uppercase mb-3 flex items-center gap-1.5"><i data-lucide="message-circle" class="w-4 h-4"></i> Contexto / Exemplo</p>
+                                <p id="example-ch" class="chinese-text text-lg md:text-xl text-[#1d1d1f] font-medium mb-1 leading-relaxed pr-8"></p>
+                                <p id="example-py" class="text-sm text-[#0066cc] mb-1 font-medium"></p>
+                                <p id="example-pt" class="text-sm text-[#86868b] italic"></p>
+                            </div>
+
+                            <div class="mt-8 border-t border-white/40 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs font-bold text-[#86868b] uppercase tracking-widest bg-white/30 px-3 py-1.5 rounded-full border border-white/50">Focar em:</span>
+                                    <div id="char-tabs" class="flex flex-wrap gap-2 justify-center"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="header-strokes" class="hidden flex-col items-center text-center">
+                            <span class="px-4 py-1.5 bg-white/50 text-[#1d1d1f] text-xs font-bold rounded-full uppercase tracking-widest border border-white/80 mb-4 shadow-sm inline-block">Estudo de Traço</span>
+                            <div class="flex items-center justify-center gap-4 mb-2">
+                                <h2 id="stroke-name" class="text-4xl md:text-5xl chinese-text font-bold text-[#1d1d1f]"></h2>
+                                <span id="stroke-py" class="text-xl md:text-2xl text-[#0066cc] font-semibold tracking-wide"></span>
+                            </div>
+                            <p id="stroke-pt" class="text-base md:text-lg text-[#86868b] font-medium uppercase tracking-widest"></p>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col w-full animate-[fadeIn_0.4s_ease-out]">
+                        
+                        <!-- STRUCTURE BOX -->
+                        <div id="struct-info-box" class="w-full glass-inner rounded-3xl p-5 mb-8 hidden">
+                            <p class="text-xs font-bold text-teal-700 uppercase mb-3 flex items-center gap-1.5">
+                                <i data-lucide="layout-template" class="w-4 h-4"></i> Estrutura Morfológica
+                            </p>
+                            <div class="flex flex-col sm:flex-row items-baseline gap-3 mb-1">
+                                <h3 id="struct-ch" class="chinese-text text-xl font-bold text-[#1d1d1f]"></h3>
+                                <span id="struct-py" class="text-sm text-[#0066cc] font-semibold bg-white/50 px-2 py-0.5 rounded-lg border border-white/80"></span>
+                            </div>
+                            <p id="struct-pt" class="text-sm text-[#86868b] italic mt-1"></p>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 w-full flex-1">
+                            
+                            <div class="flex flex-col items-center">
+                                <div id="character-target" class="drawing-board-container grid-bg-standard"></div>
+                                <div id="feedback-msg" class="text-[#86868b] min-h-[44px] max-w-[280px] text-sm md:text-base font-semibold mt-6 text-center transition-all flex items-center justify-center w-full px-4 py-2 bg-white/30 rounded-xl shadow-sm border border-white/60">
+                                    Aguardando interação...
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 md:flex md:flex-col gap-4 w-full md:w-auto max-w-[280px] md:max-w-none">
+                                <button type="button" onclick="animateCharacter()" class="glass-btn px-6 py-4 rounded-2xl flex items-center justify-center gap-3 group">
+                                    <div class="bg-white/50 text-[#86868b] p-2 rounded-xl group-hover:bg-white group-hover:text-[#0066cc] transition-colors shadow-sm border border-white/80">
+                                        <i data-lucide="play-circle" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="text-sm font-bold uppercase tracking-wider">Animar</span>
+                                </button>
+                                
+                                <button type="button" id="btn-practice" onclick="startQuiz()" class="glass-btn-primary px-6 py-4 rounded-2xl flex items-center justify-center gap-3 group pulse-light">
+                                    <div class="bg-teal-500/20 text-teal-700 p-2 rounded-xl group-hover:bg-teal-500 group-hover:text-white transition-colors border border-teal-500/30">
+                                        <i data-lucide="edit-3" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="text-sm font-bold uppercase tracking-wider text-[#1d1d1f]">Praticar</span>
+                                </button>
+                                
+                                <div class="col-span-2 hidden md:block h-px bg-white/40 w-full my-2"></div>
+                                
+                                <div class="col-span-2 flex gap-4">
+                                    <button type="button" onclick="showOutline()" class="glass-btn flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1d1d1f]">
+                                        <i data-lucide="eye" class="w-4 h-4 text-teal-600"></i> Guia On
+                                    </button>
+                                    <button type="button" onclick="hideOutline()" class="glass-btn flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-[#86868b]">
+                                        <i data-lucide="eye-off" class="w-4 h-4"></i> Guia Off
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // BANCO DE DADOS 100% COMPLETO DO CONTEÚDO SCANEADO
+        // l: 1 = Verbos, l: 2 = Vocabulário, l: 3 = Expressões
+        // c: Inicial do pinyin para organização alfabética
+        const database = [
+            // ================== VERBOS (l: 1) ==================
+            { w: "帮", p: "bāng", t: "ajudar", c: "B", l: 1 },
+            { w: "比较喜欢", p: "bǐjiào xǐhuan", t: "preferir", c: "B", l: 1 },
+            { w: "必须", p: "bìxū", t: "ter que / dever", c: "B", l: 1 },
+            { w: "吃", p: "chī", t: "comer", c: "C", l: 1 },
+            { w: "带", p: "dài", t: "levar / trazer", c: "D", l: 1 },
+            { w: "懂", p: "dǒng", t: "entender", c: "D", l: 1 },
+            { w: "读", p: "dú", t: "ler", c: "D", l: 1 },
+            { w: "工作", p: "gōngzuò", t: "trabalhar", c: "G", l: 1 },
+            { w: "关", p: "guān", t: "fechar", c: "G", l: 1 },
+            { w: "喝", p: "hē", t: "beber", c: "H", l: 1 },
+            { w: "会", p: "huì", t: "saber / poder / falar", c: "H", l: 1 },
+            { w: "见", p: "jiàn", t: "encontrar", c: "J", l: 1 },
+            { w: "觉得", p: "juéde", t: "achar / pensar", c: "J", l: 1 },
+            { w: "开", p: "kāi", t: "abrir", c: "K", l: 1 },
+            { w: "开始", p: "kāishǐ", t: "começar", c: "K", l: 1 },
+            { w: "看", p: "kàn", t: "olhar / assistir", c: "K", l: 1 },
+            { w: "看见", p: "kànjiàn", t: "ver", c: "K", l: 1 },
+            { w: "可以", p: "kěyǐ", t: "poder", c: "K", l: 1 },
+            { w: "来", p: "lái", t: "vir", c: "L", l: 1 },
+            { w: "留", p: "liú", t: "ficar", c: "L", l: 1 },
+            { w: "买", p: "mǎi", t: "comprar", c: "M", l: 1 },
+            { w: "卖", p: "mài", t: "vender", c: "M", l: 1 },
+            { w: "能", p: "néng", t: "poder / conseguir", c: "N", l: 1 },
+            { w: "起床", p: "qǐchuáng", t: "levantar-se", c: "Q", l: 1 },
+            { w: "去", p: "qù", t: "ir", c: "Q", l: 1 },
+            { w: "认识", p: "rènshi", t: "conhecer", c: "R", l: 1 },
+            { w: "是", p: "shì", t: "ser", c: "S", l: 1 },
+            { w: "睡觉", p: "shuìjiào", t: "dormir", c: "S", l: 1 },
+            { w: "说", p: "shuō", t: "falar / dizer", c: "S", l: 1 },
+            { w: "想", p: "xiǎng", t: "querer / pensar", c: "X", l: 1 },
+            { w: "想要", p: "xiǎng yào", t: "querer / gostaria", c: "X", l: 1 },
+            { w: "写", p: "xiě", t: "escrever", c: "X", l: 1 },
+            { w: "洗", p: "xǐ", t: "lavar", c: "X", l: 1 },
+            { w: "喜欢", p: "xǐhuan", t: "gostar", c: "X", l: 1 },
+            { w: "学习", p: "xuéxí", t: "estudar", c: "X", l: 1 },
+            { w: "需要", p: "xūyào", t: "precisar", c: "X", l: 1 },
+            { w: "要", p: "yào", t: "querer / precisar", c: "Y", l: 1 },
+            { w: "应该", p: "yīnggāi", t: "dever", c: "Y", l: 1 },
+            { w: "有", p: "yǒu", t: "ter", c: "Y", l: 1 },
+            { w: "在", p: "zài", t: "estar", c: "Z", l: 1 },
+            { w: "知道", p: "zhīdào", t: "saber", c: "Z", l: 1 },
+            { w: "制作", p: "zhìzuò", t: "fabricar / fazer", c: "Z", l: 1 },
+            { w: "住", p: "zhù", t: "morar", c: "Z", l: 1 },
+            { w: "走", p: "zǒu", t: "andar / ir", c: "Z", l: 1 },
+            { w: "做", p: "zuò", t: "fazer", c: "Z", l: 1 },
+
+            // ================== VOCABULÁRIO (l: 2) ==================
+            { w: "爸爸", p: "bàba", t: "pai", c: "B", l: 2 },
+            { w: "百货商场", p: "bǎihuò shāngchǎng", t: "loja de departamentos / shopping", c: "B", l: 2 },
+            { w: "办公室", p: "bàngōngshì", t: "escritório", c: "B", l: 2 },
+            { w: "帮助", p: "bāngzhù", t: "ajuda", c: "B", l: 2 },
+            { w: "半夜", p: "bànyè", t: "meia-noite", c: "B", l: 2 },
+            { w: "爆米花", p: "bàomǐhuā", t: "pipoca", c: "B", l: 2 },
+            { w: "保姆", p: "bǎomǔ", t: "babá / empregada", c: "B", l: 2 },
+            { w: "报纸", p: "bàozhǐ", t: "jornal", c: "B", l: 2 },
+            { w: "包子", p: "bāozi", t: "pão cozido no vapor", c: "B", l: 2 },
+            { w: "巴西", p: "Bāxī", t: "Brasil", c: "B", l: 2 },
+            { w: "巴西人", p: "bāxīrén", t: "brasileiro", c: "B", l: 2 },
+            { w: "饼干", p: "bǐnggān", t: "biscoito", c: "B", l: 2 },
+            { w: "冰激凌", p: "bīngjīlíng", t: "sorvete", c: "B", l: 2 },
+            { w: "菠萝", p: "bōluó", t: "abacaxi", c: "B", l: 2 },
+            { w: "不", p: "bù", t: "não", c: "B", l: 2 },
+            { w: "草莓", p: "cǎoméi", t: "morango", c: "C", l: 2 },
+            { w: "茶", p: "chá", t: "chá", c: "C", l: 2 },
+            { w: "超市", p: "chāoshì", t: "supermercado", c: "C", l: 2 },
+            { w: "车", p: "chē", t: "carro", c: "C", l: 2 },
+            { w: "城市", p: "chéngshì", t: "cidade", c: "C", l: 2 },
+            { w: "橙子", p: "chéngzi", t: "laranja", c: "C", l: 2 },
+            { w: "吃饭", p: "chīfàn", t: "refeição", c: "C", l: 2 },
+            { w: "窗户", p: "chuānghu", t: "janela", c: "C", l: 2 },
+            { w: "厨房", p: "chúfáng", t: "cozinha", c: "C", l: 2 },
+            { w: "出租车", p: "chūzūchē", t: "táxi", c: "C", l: 2 },
+            { w: "从", p: "cóng", t: "de (origem)", c: "C", l: 2 },
+            { w: "聪明", p: "cōngming", t: "inteligente", c: "C", l: 2 },
+            { w: "错", p: "cuò", t: "errado", c: "C", l: 2 },
+            { w: "错的", p: "cuòde", t: "errado", c: "C", l: 2 },
+            { w: "大夫", p: "dàifu", t: "médico", c: "D", l: 2 },
+            { w: "单身", p: "dānshēn", t: "solteiro", c: "D", l: 2 },
+            { w: "蛋糕", p: "dàngāo", t: "bolo", c: "D", l: 2 },
+            { w: "但是", p: "dànshì", t: "mas", c: "D", l: 2 },
+            { w: "到", p: "dào", t: "até / chegar", c: "D", l: 2 },
+            { w: "德国", p: "Déguó", t: "Alemanha", c: "D", l: 2 },
+            { w: "电脑", p: "diànnǎo", t: "computador", c: "D", l: 2 },
+            { w: "电影", p: "diànyǐng", t: "filme", c: "D", l: 2 },
+            { w: "电影院", p: "diànyǐngyuàn", t: "cinema", c: "D", l: 2 },
+            { w: "弟弟", p: "dìdi", t: "irmão mais novo", c: "D", l: 2 },
+            { w: "地方", p: "dìfang", t: "lugar", c: "D", l: 2 },
+            { w: "地址", p: "dìzhǐ", t: "endereço", c: "D", l: 2 },
+            { w: "东西", p: "dōngxi", t: "coisa / objeto", c: "D", l: 2 },
+            { w: "豆子", p: "dòuzi", t: "feijão", c: "D", l: 2 },
+            { w: "对", p: "duì", t: "correto", c: "D", l: 2 },
+            { w: "对的", p: "duìde", t: "certo", c: "D", l: 2 },
+            { w: "饿", p: "è", t: "com fome", c: "E", l: 2 },
+            { w: "儿子", p: "érzi", t: "filho", c: "E", l: 2 },
+            { w: "法国", p: "Fǎguó", t: "França", c: "F", l: 2 },
+            { w: "饭", p: "fàn", t: "arroz / refeição", c: "F", l: 2 },
+            { w: "饭店", p: "fàndiàn", t: "hotel / restaurante", c: "F", l: 2 },
+            { w: "房间", p: "fángjiān", t: "quarto / sala", c: "F", l: 2 },
+            { w: "房子", p: "fángzi", t: "casa", c: "F", l: 2 },
+            { w: "饭馆儿", p: "fànguǎnr", t: "restaurante", c: "F", l: 2 },
+            { w: "发票", p: "fāpiào", t: "nota fiscal", c: "F", l: 2 },
+            { w: "飞机", p: "fēijī", t: "avião", c: "F", l: 2 },
+            { w: "父母", p: "fùmǔ", t: "pais", c: "F", l: 2 },
+            { w: "富有", p: "fùyǒu", t: "rico", c: "F", l: 2 },
+            { w: "刚刚", p: "gānggāng", t: "agora mesmo", c: "G", l: 2 },
+            { w: "歌", p: "gē", t: "canção", c: "G", l: 2 },
+            { w: "哥哥", p: "gēge", t: "irmão mais velho", c: "G", l: 2 },
+            { w: "给", p: "gěi", t: "para / dar", c: "G", l: 2 },
+            { w: "跟", p: "gēn", t: "com", c: "G", l: 2 },
+            { w: "歌手", p: "gēshǒu", t: "cantor", c: "G", l: 2 },
+            { w: "工厂", p: "gōngchǎng", t: "fábrica", c: "G", l: 2 },
+            { w: "工程师", p: "gōngchéngshī", t: "engenheiro", c: "G", l: 2 },
+            { w: "公交", p: "gōngjiāo", t: "ônibus", c: "G", l: 2 },
+            { w: "公交站", p: "gōngjiāo zhàn", t: "estação / ponto de ônibus", c: "G", l: 2 },
+            { w: "公司", p: "gōngsī", t: "empresa", c: "G", l: 2 },
+            { w: "公寓", p: "gōngyù", t: "apartamento", c: "G", l: 2 },
+            { w: "公园", p: "gōngyuán", t: "parque", c: "G", l: 2 },
+            { w: "贵", p: "guì", t: "caro", c: "G", l: 2 },
+            { w: "国家", p: "guójiā", t: "país", c: "G", l: 2 },
+            { w: "果汁", p: "guǒzhī", t: "suco", c: "G", l: 2 },
+            { w: "海边", p: "hǎibiān", t: "praia / litoral", c: "H", l: 2 },
+            { w: "还是", p: "háishì", t: "ou", c: "H", l: 2 },
+            { w: "孩子", p: "háizi", t: "criança", c: "H", l: 2 },
+            { w: "孩子们", p: "háizimen", t: "crianças", c: "H", l: 2 },
+            { w: "好看", p: "hǎokàn", t: "bonito", c: "H", l: 2 },
+            { w: "花", p: "huā", t: "flor", c: "H", l: 2 },
+            { w: "画家", p: "huàjiā", t: "pintor", c: "H", l: 2 },
+            { w: "伙伴", p: "huǒbàn", t: "parceiro", c: "H", l: 2 },
+            { w: "火车", p: "huǒchē", t: "trem", c: "H", l: 2 },
+            { w: "火车站", p: "huǒchē zhàn", t: "estação de trem", c: "H", l: 2 },
+            { w: "家", p: "jiā", t: "casa / família", c: "J", l: 2 },
+            { w: "假的", p: "jiǎde", t: "falso", c: "J", l: 2 },
+            { w: "胶囊", p: "jiāonáng", t: "cápsula / pílula", c: "J", l: 2 },
+            { w: "教堂", p: "jiàotáng", t: "igreja", c: "J", l: 2 },
+            { w: "饺子", p: "jiǎozi", t: "guioza", c: "J", l: 2 },
+            { w: "家人", p: "jiārén", t: "familiar", c: "J", l: 2 },
+            { w: "家庭", p: "jiātíng", t: "família", c: "J", l: 2 },
+            { w: "机场", p: "jīchǎng", t: "aeroporto", c: "J", l: 2 },
+            { w: "街", p: "jiē", t: "rua", c: "J", l: 2 },
+            { w: "姐姐", p: "jiějie", t: "irmã mais velha", c: "J", l: 2 },
+            { w: "警察", p: "jǐngchá", t: "policial", c: "J", l: 2 },
+            { w: "今天", p: "jīntiān", t: "hoje", c: "J", l: 2 },
+            { w: "今晚", p: "jīnwǎn", t: "hoje à noite", c: "J", l: 2 },
+            { w: "机票", p: "jīpiào", t: "passagem aérea", c: "J", l: 2 },
+            { w: "鸡肉", p: "jīròu", t: "carne de frango", c: "J", l: 2 },
+            { w: "聚会", p: "jùhuì", t: "festa / reunião", c: "J", l: 2 },
+            { w: "咖啡", p: "kāfēi", t: "café", c: "K", l: 2 },
+            { w: "考试", p: "kǎoshì", t: "prova / exame", c: "K", l: 2 },
+            { w: "烤鸭", p: "kǎoyā", t: "pato assado", c: "K", l: 2 },
+            { w: "卡片", p: "kǎpiàn", t: "cartão", c: "K", l: 2 },
+            { w: "课", p: "kè", t: "aula", c: "K", l: 2 },
+            { w: "渴", p: "kě", t: "com sede", c: "K", l: 2 },
+            { w: "客户", p: "kèhù", t: "cliente", c: "K", l: 2 },
+            { w: "快乐", p: "kuàilè", t: "feliz", c: "K", l: 2 },
+            { w: "困", p: "kùn", t: "com sono", c: "K", l: 2 },
+            { w: "老板", p: "lǎobǎn", t: "chefe", c: "L", l: 2 },
+            { w: "累", p: "lèi", t: "cansado", c: "L", l: 2 },
+            { w: "冷", p: "lěng", t: "frio", c: "L", l: 2 },
+            { w: "梨", p: "lí", t: "pera", c: "L", l: 2 },
+            { w: "脸", p: "liǎn", t: "rosto", c: "L", l: 2 },
+            { w: "礼拜", p: "lǐbài", t: "semana", c: "L", l: 2 },
+            { w: "邻居", p: "línjū", t: "vizinho", c: "L", l: 2 },
+            { w: "礼物", p: "lǐwù", t: "presente", c: "L", l: 2 },
+            { w: "律师", p: "lǜshī", t: "advogado", c: "L", l: 2 },
+            { w: "旅行", p: "lǚxíng", t: "viajar / viagem", c: "L", l: 2 },
+            { w: "妈妈", p: "māma", t: "mãe", c: "M", l: 2 },
+            { w: "马上", p: "mǎshàng", t: "imediatamente", c: "M", l: 2 },
+            { w: "每个", p: "měigè", t: "cada", c: "M", l: 2 },
+            { w: "美国", p: "Měiguó", t: "Estados Unidos", c: "M", l: 2 },
+            { w: "美国人", p: "měiguórén", t: "americano", c: "M", l: 2 },
+            { w: "美金", p: "měijīn", t: "dólar americano", c: "M", l: 2 },
+            { w: "美丽", p: "měilì", t: "bonito(a)", c: "M", l: 2 },
+            { w: "妹妹", p: "mèimei", t: "irmã mais nova", c: "M", l: 2 },
+            { w: "每天", p: "měitiān", t: "todos os dias", c: "M", l: 2 },
+            { w: "没有人", p: "méiyǒurén", t: "ninguém", c: "M", l: 2 },
+            { w: "美元", p: "měiyuán", t: "dólar", c: "M", l: 2 },
+            { w: "门", p: "mén", t: "porta", c: "M", l: 2 },
+            { w: "面", p: "miàn", t: "macarrão / massa", c: "M", l: 2 },
+            { w: "面包", p: "miànbāo", t: "pão", c: "M", l: 2 },
+            { w: "米饭", p: "mǐfàn", t: "arroz", c: "M", l: 2 },
+            { w: "明天", p: "míngtiān", t: "amanhã", c: "M", l: 2 },
+            { w: "秘书", p: "mìshū", t: "secretário(a)", c: "M", l: 2 },
+            { w: "哪种", p: "nǎ zhǒng", t: "qual tipo", c: "N", l: 2 },
+            { w: "那个", p: "nàge", t: "aquele", c: "N", l: 2 },
+            { w: "奶酪", p: "nǎilào", t: "queijo", c: "N", l: 2 },
+            { w: "那里", p: "nàlǐ", t: "lá", c: "N", l: 2 },
+            { w: "哪里", p: "nǎlǐ", t: "onde", c: "N", l: 2 },
+            { w: "难", p: "nán", t: "difícil", c: "N", l: 2 },
+            { w: "难的", p: "nànde", t: "difícil", c: "N", l: 2 },
+            { w: "难过", p: "nánguò", t: "triste", c: "N", l: 2 },
+            { w: "男朋友", p: "nánpéngyou", t: "namorado", c: "N", l: 2 },
+            { w: "男人", p: "nánrén", t: "homem", c: "N", l: 2 },
+            { w: "你", p: "nǐ", t: "você", c: "N", l: 2 },
+            { w: "年", p: "nián", t: "ano", c: "N", l: 2 },
+            { w: "你的", p: "nǐde", t: "seu / sua", c: "N", l: 2 },
+            { w: "你们", p: "nǐmen", t: "vocês", c: "N", l: 2 },
+            { w: "你们的", p: "nǐmende", t: "de vocês", c: "N", l: 2 },
+            { w: "柠檬", p: "níngméng", t: "limão", c: "N", l: 2 },
+            { w: "牛奶", p: "niúnǎi", t: "leite", c: "N", l: 2 },
+            { w: "牛排", p: "niúpái", t: "bife", c: "N", l: 2 },
+            { w: "女儿", p: "nǚ'ér", t: "filha", c: "N", l: 2 },
+            { w: "女朋友", p: "nǚpéngyou", t: "namorada", c: "N", l: 2 },
+            { w: "女人", p: "nǚrén", t: "mulher", c: "N", l: 2 },
+            { w: "欧洲", p: "Ōuzhōu", t: "Europa", c: "O", l: 2 },
+            { w: "便宜", p: "piányi", t: "barato", c: "P", l: 2 },
+            { w: "票", p: "piào", t: "bilhete / ingresso", c: "P", l: 2 },
+            { w: "漂亮", p: "piàoliang", t: "bonito(a)", c: "P", l: 2 },
+            { w: "苹果", p: "píngguǒ", t: "maçã", c: "P", l: 2 },
+            { w: "贫穷", p: "pínqióng", t: "pobre", c: "P", l: 2 },
+            { w: "葡萄", p: "pútáo", t: "uva", c: "P", l: 2 },
+            { w: "葡萄牙语", p: "pútaoyáyǔ", t: "português (idioma)", c: "P", l: 2 },
+            { w: "钱", p: "qián", t: "dinheiro", c: "Q", l: 2 },
+            { w: "亲戚", p: "qīnqi", t: "parentes", c: "Q", l: 2 },
+            { w: "汽水", p: "qìshuǐ", t: "refrigerante", c: "Q", l: 2 },
+            { w: "热", p: "rè", t: "quente", c: "R", l: 2 },
+            { w: "人", p: "rén", t: "pessoa", c: "R", l: 2 },
+            { w: "人们", p: "rénmen", t: "pessoas", c: "R", l: 2 },
+            { w: "容易", p: "róngyì", t: "fácil", c: "R", l: 2 },
+            { w: "容易的", p: "róngyìde", t: "fácil", c: "R", l: 2 },
+            { w: "肉", p: "ròu", t: "carne", c: "R", l: 2 },
+            { w: "沙拉", p: "shālā", t: "salada", c: "S", l: 2 },
+            { w: "上班", p: "shàngbān", t: "ir trabalhar", c: "S", l: 2 },
+            { w: "商场", p: "shāngchǎng", t: "shopping", c: "S", l: 2 },
+            { w: "商人", p: "shāngrén", t: "homem de negócios", c: "S", l: 2 },
+            { w: "商业", p: "shāngyè", t: "negócios / comércio", c: "S", l: 2 },
+            { w: "什么", p: "shénme", t: "o que", c: "S", l: 2 },
+            { w: "市场", p: "shìchǎng", t: "mercado", c: "S", l: 2 },
+            { w: "是的", p: "shìde", t: "sim", c: "S", l: 2 },
+            { w: "时间", p: "shíjiān", t: "tempo", c: "S", l: 2 },
+            { w: "十块", p: "shíkuài", t: "dez pratas", c: "S", l: 2 },
+            { w: "事情", p: "shìqing", t: "coisa / assunto", c: "S", l: 2 },
+            { w: "市中心", p: "shìzhōngxīn", t: "centro da cidade", c: "S", l: 2 },
+            { w: "手", p: "shǒu", t: "mão", c: "S", l: 2 },
+            { w: "手表", p: "shǒubiǎo", t: "relógio de pulso", c: "S", l: 2 },
+            { w: "手机", p: "shǒujī", t: "celular", c: "S", l: 2 },
+            { w: "收据", p: "shōujù", t: "recibo", c: "S", l: 2 },
+            { w: "帅", p: "shuài", t: "bonito (homens)", c: "S", l: 2 },
+            { w: "蔬菜", p: "shūcài", t: "vegetais", c: "S", l: 2 },
+            { w: "水", p: "shuǐ", t: "água", c: "S", l: 2 },
+            { w: "谁", p: "shuí", t: "quem", c: "S", l: 2 },
+            { w: "说话", p: "shuōhuà", t: "falar", c: "S", l: 2 },
+            { w: "薯条", p: "shǔtiáo", t: "batata frita", c: "S", l: 2 },
+            { w: "司机", p: "sījī", t: "motorista", c: "S", l: 2 },
+            { w: "所以", p: "suǒyǐ", t: "então", c: "S", l: 2 },
+            { w: "他", p: "tā", t: "ele", c: "T", l: 2 },
+            { w: "她", p: "tā", t: "ela", c: "T", l: 2 },
+            { w: "他的", p: "tāde", t: "dele", c: "T", l: 2 },
+            { w: "她的", p: "tāde", t: "dela", c: "T", l: 2 },
+            { w: "太太", p: "tàitai", t: "esposa / senhora", c: "T", l: 2 },
+            { w: "他们", p: "tāmen", t: "eles", c: "T", l: 2 },
+            { w: "她们", p: "tāmen", t: "elas", c: "T", l: 2 },
+            { w: "他们的", p: "tāmende", t: "deles", c: "T", l: 2 },
+            { w: "她们的", p: "tāmende", t: "delas", c: "T", l: 2 },
+            { w: "汤", p: "tāng", t: "sopa", c: "T", l: 2 },
+            { w: "糖", p: "táng", t: "açúcar", c: "T", l: 2 },
+            { w: "糖果", p: "tángguǒ", t: "doce / bala", c: "T", l: 2 },
+            { w: "桃", p: "táo", t: "pêssego", c: "T", l: 2 },
+            { w: "天", p: "tiān", t: "dia", c: "T", l: 2 },
+            { w: "甜点", p: "tiándiǎn", t: "sobremesa", c: "T", l: 2 },
+            { w: "跳舞", p: "tiàowǔ", t: "dançar", c: "T", l: 2 },
+            { w: "头发", p: "tóufa", t: "cabelo", c: "T", l: 2 },
+            { w: "通常", p: "tōngcháng", t: "geralmente", c: "T", l: 2 },
+            { w: "土豆", p: "tǔdòu", t: "batata", c: "T", l: 2 },
+            { w: "外套", p: "wàitào", t: "casaco", c: "W", l: 2 },
+            { w: "晚", p: "wǎn", t: "tarde", c: "W", l: 2 },
+            { w: "晚饭", p: "wǎnfàn", t: "jantar", c: "W", l: 2 },
+            { w: "玩具", p: "wánjù", t: "brinquedo", c: "W", l: 2 },
+            { w: "我", p: "wǒ", t: "eu", c: "W", l: 2 },
+            { w: "我的", p: "wǒde", t: "meu / minha", c: "W", l: 2 },
+            { w: "我们", p: "wǒmen", t: "nós", c: "W", l: 2 },
+            { w: "我们的", p: "wǒmende", t: "nosso / nossa", c: "W", l: 2 },
+            { w: "午饭", p: "wǔfàn", t: "almoço", c: "W", l: 2 },
+            { w: "下个", p: "xiàge", t: "próximo", c: "X", l: 2 },
+            { w: "香蕉", p: "xiāngjiāo", t: "banana", c: "X", l: 2 },
+            { w: "先生", p: "xiānsheng", t: "marido / senhor", c: "X", l: 2 },
+            { w: "现在", p: "xiànzài", t: "agora", c: "X", l: 2 },
+            { w: "下雨", p: "xiàyǔ", t: "chover", c: "X", l: 2 },
+            { w: "西班牙", p: "Xībānyá", t: "Espanha", c: "X", l: 2 },
+            { w: "西班牙语", p: "xībānyáyǔ", t: "espanhol (idioma)", c: "X", l: 2 },
+            { w: "学生", p: "xuésheng", t: "aluno / estudante", c: "X", l: 2 },
+            { w: "学校", p: "xuéxiào", t: "escola", c: "X", l: 2 },
+            { w: "戏剧", p: "xìjù", t: "ópera chinesa / teatro", c: "X", l: 2 },
+            { w: "信", p: "xìn", t: "carta", c: "X", l: 2 },
+            { w: "洗手间", p: "xǐshǒujiān", t: "banheiro", c: "X", l: 2 },
+            { w: "演唱会", p: "yǎnchànghuì", t: "show / concerto", c: "Y", l: 2 },
+            { w: "药", p: "yào", t: "remédio", c: "Y", l: 2 },
+            { w: "药店", p: "yàodiàn", t: "farmácia", c: "Y", l: 2 },
+            { w: "药丸", p: "yàowán", t: "pílula", c: "Y", l: 2 },
+            { w: "牙医", p: "yáyī", t: "dentista", c: "Y", l: 2 },
+            { w: "也", p: "yě", t: "também", c: "Y", l: 2 },
+            { w: "一种", p: "yì zhǒng", t: "um tipo de", c: "Y", l: 2 },
+            { w: "衣服", p: "yīfu", t: "roupas", c: "Y", l: 2 },
+            { w: "一个人", p: "yígerén", t: "sozinho / uma pessoa", c: "Y", l: 2 },
+            { w: "已婚", p: "yǐhūn", t: "casado", c: "Y", l: 2 },
+            { w: "英国", p: "Yīngguó", t: "Inglaterra", c: "Y", l: 2 },
+            { w: "英语", p: "yīngyǔ", t: "inglês (idioma)", c: "Y", l: 2 },
+            { w: "银行", p: "yínháng", t: "banco", c: "Y", l: 2 },
+            { w: "一起", p: "yìqǐ", t: "juntos", c: "Y", l: 2 },
+            { w: "医生", p: "yīshēng", t: "médico", c: "Y", l: 2 },
+            { w: "意外", p: "yìwài", t: "acidente", c: "Y", l: 2 },
+            { w: "医院", p: "yīyuàn", t: "hospital", c: "Y", l: 2 },
+            { w: "邮件", p: "yóujiàn", t: "e-mail", c: "Y", l: 2 },
+            { w: "游戏", p: "yóuxì", t: "jogo", c: "Y", l: 2 },
+            { w: "鱼", p: "yú", t: "peixe", c: "Y", l: 2 },
+            { w: "月", p: "yuè", t: "mês", c: "Y", l: 2 },
+            { w: "语言", p: "yǔyán", t: "língua / idioma", c: "Y", l: 2 },
+            { w: "早", p: "zǎo", t: "cedo", c: "Z", l: 2 },
+            { w: "早饭", p: "zǎofàn", t: "café da manhã", c: "Z", l: 2 },
+            { w: "杂志", p: "zázhì", t: "revista", c: "Z", l: 2 },
+            { w: "怎么", p: "zěnme", t: "como", c: "Z", l: 2 },
+            { w: "展览", p: "zhǎnlǎn", t: "exposição", c: "Z", l: 2 },
+            { w: "这个", p: "zhège", t: "este / isto", c: "Z", l: 2 },
+            { w: "这里", p: "zhèlǐ", t: "aqui", c: "Z", l: 2 },
+            { w: "真的", p: "zhēnde", t: "verdadeiro", c: "Z", l: 2 },
+            { w: "只", p: "zhǐ", t: "apenas", c: "Z", l: 2 },
+            { w: "只有", p: "zhǐyǒu", t: "somente", c: "Z", l: 2 },
+            { w: "种", p: "zhǒng", t: "tipo", c: "Z", l: 2 },
+            { w: "中国", p: "Zhōngguó", t: "China", c: "Z", l: 2 },
+            { w: "中国人", p: "zhōngguórén", t: "chinês (nacionalidade)", c: "Z", l: 2 },
+            { w: "中文", p: "zhōngwén", t: "chinês (idioma)", c: "Z", l: 2 },
+            { w: "中午", p: "zhōngwǔ", t: "meio-dia", c: "Z", l: 2 },
+            { w: "周末", p: "zhōumò", t: "fim de semana", c: "Z", l: 2 },
+            { w: "猪肉", p: "zhūròu", t: "carne de porco", c: "Z", l: 2 },
+            { w: "作业", p: "zuòyè", t: "dever de casa", c: "Z", l: 2 },
+
+            // ================== EXPRESSÕES (l: 3) ==================
+            { w: "半天", p: "bàntiān", t: "meio período", c: "B", l: 3 },
+            { w: "包裹", p: "bāoguǒ", t: "pacote / encomenda", c: "B", l: 3 },
+            { w: "不客气", p: "búkèqi", t: "de nada", c: "B", l: 3 },
+            { w: "不幸的是", p: "búxìngdeshì", t: "infelizmente", c: "B", l: 3 },
+            { w: "差不多", p: "chàbuduō", t: "mais ou menos / quase", c: "C", l: 3 },
+            { w: "吃晚饭", p: "chī wǎnfàn", t: "jantar (o ato de)", c: "C", l: 3 },
+            { w: "吃午饭", p: "chi wǔfàn", t: "almoçar", c: "C", l: 3 },
+            { w: "吃早饭", p: "chī zǎofàn", t: "tomar café da manhã", c: "C", l: 3 },
+            { w: "打折", p: "dǎzhé", t: "em promoção", c: "D", l: 3 },
+            { w: "对不起", p: "duìbùqǐ", t: "desculpe", c: "D", l: 3 },
+            { w: "度假", p: "dùjià", t: "de férias", c: "D", l: 3 },
+            { w: "多少", p: "duōshǎo", t: "quanto", c: "D", l: 3 },
+            { w: "放假", p: "fàngjià", t: "feriado / férias", c: "F", l: 3 },
+            { w: "翻译", p: "fānyì", t: "tradução", c: "F", l: 3 },
+            { w: "更多", p: "gèng duō", t: "mais", c: "G", l: 3 },
+            { w: "恭喜你", p: "gōngxǐ nǐ", t: "parabéns", c: "G", l: 3 },
+            { w: "购物中心", p: "gòuwù zhōngxīn", t: "shopping center", c: "G", l: 3 },
+            { w: "还没有", p: "hái méiyǒu", t: "ainda não", c: "H", l: 3 },
+            { w: "很", p: "hěn", t: "muito", c: "H", l: 3 },
+            { w: "很高兴认识你", p: "Hěn gāoxìng rènshi nǐ", t: "Muito prazer em conhecê-lo", c: "H", l: 3 },
+            { w: "很多", p: "hěnduō", t: "muitos", c: "H", l: 3 },
+            { w: "后天", p: "hòutiān", t: "depois de amanhã", c: "H", l: 3 },
+            { w: "回家", p: "huí jiā", t: "ir para casa", c: "H", l: 3 },
+            { w: "会议", p: "huìyì", t: "reunião", c: "H", l: 3 },
+            { w: "几点了", p: "Jǐdiǎn le?", t: "Que horas são?", c: "J", l: 3 },
+            { w: "经常", p: "jīngcháng", t: "frequentemente", c: "J", l: 3 },
+            { w: "今年", p: "jīnnián", t: "este ano", c: "J", l: 3 },
+            { w: "今天太热了", p: "Jīntiān tài rèle", t: "Hoje está muito quente", c: "J", l: 3 },
+            { w: "今天晚上", p: "jīntiān wǎnshang", t: "hoje à noite", c: "J", l: 3 },
+            { w: "今天下午", p: "jīntiān xiàwǔ", t: "hoje à tarde", c: "J", l: 3 },
+            { w: "今天下雨", p: "jīntiān xiàyǔ", t: "Chove hoje.", c: "J", l: 3 },
+            { w: "今天早上", p: "jīntiān zǎoshang", t: "hoje de manhã", c: "J", l: 3 },
+            { w: "来吃饭", p: "Lái chīfàn", t: "Venha comer.", c: "L", l: 3 },
+            { w: "来这里", p: "Lái zhèlǐ", t: "Venha aqui.", c: "L", l: 3 },
+            { w: "卖完了", p: "màiwánle", t: "esgotado", c: "M", l: 3 },
+            { w: "慢慢吃", p: "màn màn chī", t: "bom apetite (coma devagar)", c: "M", l: 3 },
+            { w: "慢慢开", p: "màn màn kāi", t: "dirija com cuidado", c: "M", l: 3 },
+            { w: "慢慢来", p: "màn màn lái", t: "vá com calma", c: "M", l: 3 },
+            { w: "没事", p: "méi shì", t: "sem problemas", c: "M", l: 3 },
+            { w: "没问题", p: "méi wèntí", t: "sem problemas", c: "M", l: 3 },
+            { w: "明年", p: "míngnián", t: "próximo ano", c: "M", l: 3 },
+            { w: "明天见", p: "míngtiān jiàn", t: "até amanhã", c: "M", l: 3 },
+            { w: "明天早上", p: "míngtiān zǎoshang", t: "amanhã de manhã", c: "M", l: 3 },
+            { w: "你吃了吗", p: "Nǐ chī le ma?", t: "Como você está? (Você já comeu?)", c: "N", l: 3 },
+            { w: "你叫什么名字", p: "Nǐ jiào shénme míngzi?", t: "Qual é o seu nome?", c: "N", l: 3 },
+            { w: "你觉得怎么样", p: "Nǐ juéde zěnmeyàng?", t: "O que você acha?", c: "N", l: 3 },
+            { w: "你呢", p: "Nǐ ne?", t: "E você?", c: "N", l: 3 },
+            { w: "年底", p: "niándǐ", t: "no final do ano", c: "N", l: 3 },
+            { w: "你好", p: "nǐhǎo", t: "olá", c: "N", l: 3 },
+            { w: "前天", p: "qiántiān", t: "anteontem", c: "Q", l: 3 },
+            { w: "请", p: "qǐng", t: "por favor", c: "Q", l: 3 },
+            { w: "请帮我一个忙", p: "qǐng bāng wǒ yígè máng", t: "por favor, me faça um favor", c: "Q", l: 3 },
+            { w: "去吃饭", p: "Qù chīfàn", t: "ir comer", c: "Q", l: 3 },
+            { w: "去购物", p: "qù gòuwù", t: "ir fazer compras", c: "Q", l: 3 },
+            { w: "去那里", p: "Qù nàlǐ", t: "ir para lá", c: "Q", l: 3 },
+            { w: "去年", p: "qùnián", t: "ano passado", c: "Q", l: 3 },
+            { w: "任何东西", p: "rènhé dōngxi", t: "qualquer coisa", c: "R", l: 3 },
+            { w: "任何事情", p: "rènhé shìqing", t: "qualquer coisa (assunto)", c: "R", l: 3 },
+            { w: "什么时候", p: "shénme shíhou", t: "quando", c: "S", l: 3 },
+            { w: "是不是", p: "shìbúshì", t: "se / quer", c: "S", l: 3 },
+            { w: "说话", p: "shuō huà", t: "conversar", c: "S", l: 3 },
+            { w: "所以", p: "suǒyǐ", t: "então", c: "S", l: 3 },
+            { w: "她太累了", p: "Tā tài lèile", t: "Ela está muito cansada.", c: "T", l: 3 },
+            { w: "太多", p: "tài duō", t: "muito", c: "T", l: 3 },
+            { w: "太难", p: "tài nán", t: "muito difícil", c: "T", l: 3 },
+            { w: "太容易", p: "tài róngyì", t: "muito fácil", c: "T", l: 3 },
+            { w: "太少", p: "tài shǎo", t: "muito pouco", c: "T", l: 3 },
+            { w: "晚安", p: "wǎn ān", t: "boa noite (despedida)", c: "W", l: 3 },
+            { w: "晚上好", p: "wǎnshang hǎo", t: "boa noite (chegada)", c: "W", l: 3 },
+            { w: "晚上见", p: "wǎnshang jiàn", t: "até à noite", c: "W", l: 3 },
+            { w: "为什么", p: "wèishénme", t: "por que", c: "W", l: 3 },
+            { w: "问题", p: "wèntí", t: "pergunta / problema", c: "W", l: 3 },
+            { w: "我叫", p: "Wǒ jiào", t: "Meu nome é...", c: "W", l: 3 },
+            { w: "我明白", p: "wǒ míngbai", t: "eu entendo", c: "W", l: 3 },
+            { w: "我也很高兴认识你", p: "Wǒ yě hěn gāoxìng rènshi nǐ", t: "Muito prazer em conhecê-lo também.", c: "W", l: 3 },
+            { w: "我也是", p: "Wǒ yě shì", t: "eu também", c: "W", l: 3 },
+            { w: "我的中文很好", p: "Wǒde zhōngwén hěn hǎo", t: "Meu chinês é muito bom.", c: "W", l: 3 },
+            { w: "我的中文马马虎虎", p: "Wǒde zhōngwén mǎmǎhūhū", t: "Meu chinês é mais ou menos.", c: "W", l: 3 },
+            { w: "下个礼拜", p: "xià ge lǐbài", t: "próxima semana", c: "X", l: 3 },
+            { w: "下个月", p: "xià ge yuè", t: "próximo mês", c: "X", l: 3 },
+            { w: "下个礼拜刮风", p: "xiàge lǐbài guāfēng", t: "Ventará na próxima semana.", c: "X", l: 3 },
+            { w: "现在几点", p: "Xiànzài jǐdiǎn?", t: "Que horas são agora?", c: "X", l: 3 },
+            { w: "现在太晚了", p: "xiànzài tài wǎnle", t: "agora é muito tarde", c: "X", l: 3 },
+            { w: "现在太早了", p: "xiànzài tài zǎole", t: "agora é muito cedo", c: "X", l: 3 },
+            { w: "下午好", p: "xiàwǔ hǎo", t: "boa tarde", c: "X", l: 3 },
+            { w: "下午见", p: "xiàwǔ jiàn", t: "até à tarde", c: "X", l: 3 },
+            { w: "洗车", p: "xǐchē", t: "lavar carro", c: "X", l: 3 },
+            { w: "谢谢", p: "xièxie", t: "obrigado", c: "X", l: 3 },
+            { w: "幸好", p: "xìng hǎo", t: "felizmente", c: "X", l: 3 },
+            { w: "洗碗", p: "xǐwǎn", t: "lavar louça", c: "X", l: 3 },
+            { w: "洗衣服", p: "xǐyīfu", t: "lavar roupas", c: "X", l: 3 },
+            { w: "洗澡", p: "xǐzǎo", t: "tomar banho", c: "X", l: 3 },
+            { w: "演讲", p: "yǎnjiǎng", t: "discurso", c: "Y", l: 3 },
+            { w: "一整天", p: "yì zhěngtiān", t: "o dia todo", c: "Y", l: 3 },
+            { w: "一会儿见", p: "yíhuìr jiàn", t: "até logo", c: "Y", l: 3 },
+            { w: "因为", p: "yīnwèi", t: "porque", c: "Y", l: 3 },
+            { w: "一些东西", p: "yìxiē dōngxi", t: "algo", c: "Y", l: 3 },
+            { w: "一些事情", p: "yìxiē shìqing", t: "algo (assunto)", c: "Y", l: 3 },
+            { w: "有时候", p: "yǒu shíhou", t: "às vezes", c: "Y", l: 3 },
+            { w: "再见", p: "zàijiàn", t: "adeus", c: "Z", l: 3 },
+            { w: "早", p: "zǎo", t: "bom dia", c: "Z", l: 3 },
+            { w: "早上好", p: "zǎoshang hǎo", t: "bom dia", c: "Z", l: 3 },
+            { w: "噪音", p: "zàoyīn", t: "barulho", c: "Z", l: 3 },
+            { w: "这个太贵了", p: "Zhège tài guìle", t: "Isso é muito caro.", c: "Z", l: 3 },
+            { w: "真的", p: "zhēnde", t: "realmente", c: "Z", l: 3 },
+            { w: "整天", p: "zhěngtiān", t: "o dia todo", c: "Z", l: 3 },
+            { w: "整夜", p: "zhěngyè", t: "a noite toda", c: "Z", l: 3 },
+            { w: "重要的", p: "zhòngyàode", t: "importante", c: "Z", l: 3 },
+            { w: "昨天晚上太冷了", p: "Zuótiān wǎnshang tài lěngle", t: "Ontem à noite estava muito frio.", c: "Z", l: 3 }
+        ];
+
+        const charStructures = {
+            '法':'lr', '律':'lr', '俩':'lr', '性':'lr', '格':'lr', '静':'lr', '孙':'lr', '新':'lr', '球':'lr', '比':'lr', '时':'lr', '好':'lr', '活':'lr', '浪':'lr', '漫':'lr', '鲜':'lr', '缺':'lr', '情':'lr', '灯':'lr', '脾':'lr', '体':'lr', '眼':'lr', '睛':'lr', '双':'lr', '雅':'lr', '眠':'lr', '诺':'lr', '欧':'lr', '坦':'lr', '巧':'lr', '郎':'lr', '织':'lr', '购':'lr', '物':'lr', '动':'lr', '聊':'lr', '旅':'lr', '地':'lr', '馆':'lr', '短':'lr', '信':'lr', '张':'lr', '外':'lr', '铁':'lr', '站':'lr', '海':'lr', '校':'lr', '饭':'lr', '话':'lr', '谊':'lr', '钱':'lr', '词':'lr', '礼':'lr', '叔':'lr', '惯':'lr', '镜':'lr', '难':'lr', '经':'lr', '理':'lr', '院':'lr', '场':'lr', '深':'lr', '福':'lr', '默':'lr', '认':'lr', '刚':'lr', '即':'lr', '使':'lr', '但':'lr', '慢':'lr', '候':'lr', '却':'lr', '玩':'lr', '加':'lr', '红':'lr', '朋':'lr', '够':'lr', '接':'lr', '引':'lr', '听':'lr', '说':'lr', '踢':'lr', '欢':'lr', '结':'lr', '婚':'lr', '唱':'lr', '歌':'lr', '找':'lr', '得':'lr', '解':'lr', '决':'lr', '泳':'lr', '放':'lr', '助':'lr', '陪':'lr', '锻':'lr', '炼':'lr', '顾':'lr', '睡':'lr', '试':'lr', '师':'lr', '知':'lr', '能':'lr', '聘':'lr', '应':'semi_tl', '机':'lr', '材':'lr', '料':'lr', '境':'lr', '调':'lr', '断':'lr', '翻':'lr', '译':'lr', '错':'lr', '满':'lr', '净':'lr', '顺':'lr', '利':'lr', '诚':'lr', '坏':'lr', '准':'lr', '挺':'lr', '另':'lr', '按':'lr', '排':'lr', '留':'lr', '约':'lr', '练':'lr', '联':'lr', '现':'lr', '设':'lr', '计':'lr',
+            '象':'tb', '李':'tb', '足':'tb', '赛':'tb', '兴':'tb', '妻':'tb', '感':'tb', '点':'tb', '高':'tb', '星':'tb', '亮':'tb', '单':'tb', '重':'tb', '夜':'tb', '当':'tb', '男':'tb', '罗':'tb', '密':'tb', '朱':'tb', '丽':'tb', '泰':'tb', '克':'tb', '号':'tb', '节':'tb', '乞':'tb', '少':'tb', '农':'tb', '百':'tb', '公':'tb', '聚':'tb', '会':'tb', '学':'tb', '名':'tb', '字':'tb', '事':'tb', '夏':'tb', '照':'tb', '南':'tb', '苹':'tb', '果':'tb', '典':'tb', '哥':'tb', '关':'tb', '系':'tb', '舞':'tb', '幸':'tb', '普':'tb', '竖':'tb', '直':'tb', '卷':'tb', '真':'tb', '然':'tb', '虽':'tb', '实':'tb', '最':'tb', '常':'tb', '差':'tb', '尽':'tb', '管':'tb', '笑':'tb', '完':'tb', '变':'tb', '老':'tb', '交':'tb', '走':'tb', '步':'tb', '享':'tb', '靠':'tb', '受':'tb', '羡':'tb', '慕':'tb', '菜':'tb', '觉':'tb', '参':'tb', '冒':'tb', '卖':'tb', '光':'tb', '复':'tb', '帮':'tb', '毕':'tb', '音':'tb', '些':'tb', '息':'tb', '思':'tb', '答':'tb', '要':'tb', '者':'tb', '总':'tb', '首':'tb', '先':'tb', '责':'tb', '笔':'tb', '客':'tb', '售':'tb', '容':'tb', '易':'tb', '且':'tb', '务':'tb',
+            '班':'lmr', '游':'lmr', '谢':'lmr', '街':'lmr', '树':'lmr', '做':'lmr', '哪':'lmr',
+            '黄':'tmb', '意':'tmb', '赢':'tmb', '曼':'tmb', '画':'tmb', '爱':'tmb',
+            '进':'semi_lb', '起':'semi_lb', '还':'semi_lb', '题':'semi_lb', '趣':'semi_lb', '运':'semi_lb', '远':'semi_lb', '近':'semi_lb', '适':'semi_lb', '遇':'semi_lb', '迟':'semi_lb', '建':'semi_lb', '这':'semi_lb', '道':'semi_lb', '过':'semi_lb', '连':'semi_lb', '通':'semi_lb',
+            '店':'semi_tl', '原':'semi_tl', '友':'semi_tl', '医':'semi_tl', '愿':'semi_tl', '压':'semi_tl', '病':'semi_tl', '瘦':'semi_tl', '厌':'semi_tl', '历':'semi_tl',
+            '气':'semi_tr', '可':'semi_tr', '司':'semi_tr', '句':'semi_tr', '式':'semi_tr',
+            '间':'semi_out', '闻':'semi_out', '同':'semi_out', '问':'semi_out', '幽':'semi_out', '网':'semi_out', '风':'semi_out', '向':'semi_out',
+            '因':'full', '图':'full', '国':'full', '园':'full', '回':'full', '四':'full', '围':'full', '团':'full',
+            '月':'single', '水':'single', '人':'single', '天':'single', '儿':'single', '马':'single', '中':'single', '书':'single', '门':'single', '口':'single', '大':'single', '日':'single', '电':'single', '瓜':'single', '母':'single', '立':'single', '长':'single', '才':'single', '也':'single', '而':'single', '且':'single', '自':'single', '其':'single', '平':'single', '正':'single', '专':'single', '几':'single', '乎':'single', '及':'single', '办':'single', '出':'single', '来':'single', '飞':'single', '心':'single', '业':'single', '工':'single', '己':'single', '之':'single', '一':'single', '丁':'single', '下':'single', '不':'single', '与':'single'
+        };
+
+        const structDetails = {
+            'lr': { ch: '左右结构', py: 'zuǒ yòu jiégòu', pt: 'Esquerda-Direita' },
+            'tb': { ch: '上下结构', py: 'shàng xià jiégòu', pt: 'Topo-Base' },
+            'lmr': { ch: '左中右结构', py: 'zuǒ zhōng yòu jiégòu', pt: 'Esq-Meio-Dir' },
+            'tmb': { ch: '上中下结构', py: 'shàng zhōng xià jiégòu', pt: 'Topo-Meio-Base' },
+            'semi_lb': { ch: '左下包围', py: 'zuǒ xià bāowéi', pt: 'Semi-cercada (Inf)' },
+            'semi_tl': { ch: '左上包围', py: 'zuǒ shàng bāowéi', pt: 'Semi-cercada (Sup)' },
+            'semi_tr': { ch: '右上包围', py: 'yòu shàng bāowéi', pt: 'Semi-cercada (TR)' },
+            'semi_out': { ch: '内外结构', py: 'nèi wài jiégòu', pt: 'Enclausurada' },
+            'full': { ch: '全包围结构', py: 'quán bāowéi jiégòu', pt: 'Totalmente Cercada' },
+            'single': { ch: '独体字', py: 'dútǐzì', pt: 'Componente Único' }
+        };
+
+        const basicStrokes = [
+            { name: '点', py: 'diǎn', pt: 'Ponto', ex: '不', num: 3 },
+            { name: '横', py: 'héng', pt: 'Traço horizontal', ex: '不', num: 0 },
+            { name: '竖', py: 'shù', pt: 'Traço vertical', ex: '不', num: 2 },
+            { name: '撇', py: 'piě', pt: 'Curva à esquerda', ex: '八', num: 0 },
+            { name: '捺', py: 'nà', pt: 'Curva à direita', ex: '八', num: 1 },
+            { name: '提', py: 'tí', pt: 'Ascendente', ex: '汉', num: 2 },
+            { name: '横钩', py: 'hénggōu', pt: 'Horizontal c/ gancho', ex: '你', num: 3 },
+            { name: '竖钩', py: 'shùgōu', pt: 'Vertical c/ gancho', ex: '小', num: 0 },
+            { name: '斜钩', py: 'xiégōu', pt: 'Inclinado c/ gancho', ex: '我', num: 4 },
+            { name: '竖提', py: 'shùtí', pt: 'Vertical ascendente', ex: '很', num: 6 },
+            { name: '横折', py: 'héngzhé', pt: 'Horizontal dobrado', ex: '口', num: 1 },
+            { name: '竖折', py: 'shùzhé', pt: 'Vertical dobrado', ex: '山', num: 1 },
+            { name: '撇点', py: 'piědiǎn', pt: 'Curva à esq. c/ ponto', ex: '好', num: 0 },
+            { name: '撇折', py: 'piězhé', pt: 'Curva dobrada', ex: '去', num: 3 },
+            { name: '横撇', py: 'héngpiě', pt: 'Horizontal p/ curva', ex: '水', num: 1 },
+            { name: '竖弯', py: 'shùwān', pt: 'Vertical curvo', ex: '四', num: 3 },
+            { name: '横折钩', py: 'héngzhégōu', pt: 'Horiz. dobrado c/ gancho', ex: '习', num: 0 },
+            { name: '竖弯钩', py: 'shùwāngōu', pt: 'Vertical curvo c/ gancho', ex: '儿', num: 1 },
+            { name: '横折提', py: 'héngzhétí', pt: 'Horiz. dobrado ascendente', ex: '语', num: 1 },
+            { name: '竖折折钩', py: 'shùzhézhégōu', pt: 'Vert. dupla dobra c/ gancho', ex: '吗', num: 4 },
+            { name: '横折弯撇', py: 'héngzhéwānpiě', pt: 'Horiz. dobrado curvo esq.', ex: '这', num: 5 },
+            { name: '横折弯钩', py: 'héngzhéwāngōu', pt: 'Horiz. dobrado curvo c/ gancho', ex: '九', num: 1 }
+        ];
+
+        const categoryNames = {
+            1: "Verbos",
+            2: "Vocabulário",
+            3: "Expressões"
+        };
+        let currentLesson = 1, filteredDB = [], currentMode = 'practice', currentItemIndex = 0, activeCharStr = '', hanziWriterInstance = null, isDesktopSidebarOpen = true;
+
+        function init() { lucide.createIcons(); document.getElementById('searchInput').addEventListener('input', e => renderSidebar(e.target.value)); }
+        
+        function switchView(id) { 
+            ['view-home', 'view-folder', 'view-app'].forEach(v => { 
+                const el = document.getElementById(v);
+                el.classList.remove('view-active', 'view-zoomed');
+                el.classList.add('view-hidden');
+            }); 
+            
+            const target = document.getElementById(id);
+            target.classList.remove('view-hidden', 'view-zoomed');
+            target.classList.add('view-active');
+        }
+
+        function openFolder() { switchView('view-folder'); }
+        function goHome() { switchView('view-home'); }
+        function goFolder() { switchView('view-folder'); }
+        
+        function openLesson(n) { 
+            currentLesson = n; 
+            const catTitle = categoryNames[n];
+            
+            const mobileTitle = document.getElementById('mobile-lesson-title');
+            if(mobileTitle) mobileTitle.innerText = catTitle;
+            const desktopTitle = document.getElementById('desktop-lesson-title');
+            if(desktopTitle) desktopTitle.innerText = catTitle; 
+            
+            filteredDB = database.filter(i => i.l === n); 
+            switchView('view-app'); 
+            setMode('practice'); 
+        }
+        
+        function removeAccents(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+        function playAudioText(id) { const t = document.getElementById(id).innerText; if(t && 'speechSynthesis' in window) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'zh-CN'; u.rate = 0.9; window.speechSynthesis.speak(u); } }
+        
+        function setMode(m) { 
+            currentMode = m; 
+            ['practice', 'structure', 'strokes'].forEach(t => document.getElementById(`tab-${t}`).classList.toggle('active', t===m)); 
+            document.getElementById('header-words').classList.toggle('hidden', m==='strokes'); 
+            document.getElementById('header-strokes').classList.toggle('hidden', m!=='strokes'); 
+            document.getElementById('struct-info-box').classList.toggle('hidden', m!=='structure'); 
+            
+            if (hanziWriterInstance) {
+                hanziWriterInstance.cancelQuiz();
+            }
+            renderSidebar(); 
+            selectItem(0, true); 
+        }
+        
+        function toggleCategory(id) { 
+            const el = document.getElementById(id);
+            el.classList.toggle('collapsed'); 
+            const arrow = el.previousElementSibling.querySelector('.cat-arrow');
+            if(arrow) arrow.style.transform = el.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+
+        function renderSidebar(rawFilter = "") {
+            const f = removeAccents(rawFilter), container = document.getElementById('listContainer'); container.innerHTML = '';
+            if(currentMode==='strokes') {
+                basicStrokes.forEach((s, i) => {
+                    if(f && !removeAccents(s.name+s.py+s.pt).includes(f)) return;
+                    const d = document.createElement('div'); d.className = `list-item-glass cursor-pointer ${i===currentItemIndex?'active':''}`; d.onclick = () => selectItem(i);
+                    d.innerHTML = `<div class="flex items-center gap-3"><div class="chinese-text text-2xl font-bold bg-white/40 w-10 h-10 flex items-center justify-center rounded-xl border border-white/60">${s.name}</div><div class="flex flex-col"><span class="text-sm font-bold text-[#0066cc]">${s.py}</span><span class="text-[10px] uppercase text-[#86868b] font-semibold">${s.pt}</span></div></div>`;
+                    container.appendChild(d);
+                });
+            } else {
+                const g = {}; filteredDB.forEach((item, i) => { if(f && !removeAccents(item.w+item.p+item.t).includes(f)) return; if(!g[item.c]) g[item.c]=[]; g[item.c].push({...item, originalIndex: i}); });
+                Object.keys(g).sort().forEach(cat => {
+                    g[cat].sort((a,b) => removeAccents(a.p).localeCompare(removeAccents(b.p)));
+                    const id = 'cat-'+removeAccents(cat).replace(/\s/g,'-');
+                    const h = document.createElement('div'); h.className = 'cat-header'; h.onclick = () => toggleCategory(id);
+                    h.innerHTML = `<span class="text-xs uppercase font-bold text-[#86868b]">${cat} (${g[cat].length})</span><i data-lucide="chevron-down" class="w-4 h-4 cat-arrow text-[#86868b] transition-transform"></i>`;
+                    container.appendChild(h);
+                    const l = document.createElement('div'); l.id = id; l.className = 'cat-list';
+                    g[cat].forEach(item => {
+                        const d = document.createElement('div'); d.className = `list-item-glass cursor-pointer ${item.originalIndex===currentItemIndex?'active':''}`; d.onclick = () => selectItem(item.originalIndex);
+                        d.innerHTML = `<div><div class="chinese-text text-lg font-bold text-[#1d1d1f]">${item.w}</div><div class="text-[10px] text-[#86868b] font-medium leading-tight">${item.t}</div></div><div class="text-xs font-bold text-teal-700 bg-white/40 px-2 py-1 rounded-lg border border-white/60 shrink-0">${item.p||''}</div>`;
+                        l.appendChild(d);
+                    });
+                    container.appendChild(l);
+                });
+                lucide.createIcons();
+            }
+        }
+
+        function selectItem(index, isInit = false) {
+            currentItemIndex = index;
+            if(!isInit && window.innerWidth < 768 && !document.getElementById('sidebar').classList.contains('-translate-x-full')) {
+                toggleMobileSidebar();
+            }
+            document.querySelectorAll('.list-item-glass').forEach(el => el.classList.remove('active'));
+            
+            if(currentMode==='strokes') {
+                const d = basicStrokes[index]; 
+                if (!d) return; 
+                document.getElementById('stroke-name').innerText = d.name; document.getElementById('stroke-py').innerText = d.py; document.getElementById('stroke-pt').innerText = d.pt; initBoard(d.ex);
+            } else {
+                const d = filteredDB[index]; 
+                if (!d) return; 
+                
+                document.getElementById('word-hanzi').innerText = d.w; document.getElementById('word-pinyin').innerText = d.p; document.getElementById('word-trans').innerText = d.t; document.getElementById('word-category').innerText = categoryNames[d.l];
+                
+                const tabs = document.getElementById('char-tabs'); tabs.innerHTML = '';
+                const chars = d.w.replace(/[，、。！？；：（）《》“”‘’…\.\sa-zA-Z0-9\/]/g, '').split('');
+                chars.forEach((c, i) => {
+                    const b = document.createElement('div'); 
+                    b.className = `w-12 h-12 flex items-center justify-center rounded-2xl cursor-pointer transition-all text-xl font-bold chinese-text border ${i===0?'bg-white/60 border-white/90 text-[#0066cc] shadow-md scale-105':'glass-inner border-white/40 text-[#86868b]'}`;
+                    b.innerText = c; 
+                    
+                    b.onclick = () => { 
+                        document.querySelectorAll('#char-tabs div').forEach(el => {
+                            el.className = 'w-12 h-12 flex items-center justify-center rounded-2xl cursor-pointer transition-all text-xl font-bold chinese-text border glass-inner border-white/40 text-[#86868b]';
+                        }); 
+                        b.className = 'w-12 h-12 flex items-center justify-center rounded-2xl cursor-pointer transition-all text-xl font-bold chinese-text border bg-white/60 border-white/90 text-[#0066cc] shadow-md scale-105'; 
+                        initBoard(c); 
+                    };
+                    tabs.appendChild(b);
+                });
+                initBoard(chars[0] || '汉');
+            }
+        }
+
+        function initBoard(c) {
+            activeCharStr = c; 
+            const target = document.getElementById('character-target'); 
+            const fb = document.getElementById('feedback-msg');
+            fb.innerText = "Aguardando interação..."; 
+            document.getElementById('btn-practice').classList.remove('pulse-light'); 
+            target.innerHTML = '';
+            
+            let drawColor = '#0066cc', radColor = '#a855f7'; 
+            
+            if(currentMode==='structure') {
+                let s = charStructures[c];
+                if (!s) s = 'single'; 
+
+                if(structDetails[s]) { 
+                    target.className = 'drawing-board-container'; 
+                    target.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280">${s==='lr'?'<rect x="15" y="15" width="120" height="250" rx="12" fill="%230066cc" fill-opacity="0.1"/><rect x="145" y="15" width="120" height="250" rx="12" fill="%230d9488" fill-opacity="0.1"/>':s==='tb'?'<rect x="15" y="15" width="250" height="120" rx="12" fill="%230066cc" fill-opacity="0.1"/><rect x="15" y="145" width="250" height="120" rx="12" fill="%230d9488" fill-opacity="0.1"/>':''}</svg>')`;
+                    document.getElementById('struct-info-box').classList.remove('hidden'); 
+                    document.getElementById('struct-ch').innerText = structDetails[s].ch; 
+                    document.getElementById('struct-py').innerText = structDetails[s].py; 
+                    document.getElementById('struct-pt').innerText = structDetails[s].pt; 
+                }
+            } else { 
+                target.className = 'drawing-board-container grid-bg-standard'; 
+                target.style.backgroundImage = ''; 
+                document.getElementById('struct-info-box').classList.add('hidden'); 
+            }
+            
+            hanziWriterInstance = HanziWriter.create('character-target', c, { 
+                width: 280, 
+                height: 280, 
+                padding: 15, 
+                strokeAnimationSpeed: 1.5, 
+                strokeColor: (currentMode==='strokes' ? '#0d9488' : drawColor), 
+                radicalColor: (currentMode==='strokes' ? '#0d9488' : radColor), 
+                outlineColor: (currentMode==='strokes' ? '#e5e5ea' : 'rgba(134, 134, 139, 0.2)'), 
+                showCharacter: currentMode !== 'strokes', 
+                showOutline: true, 
+                drawingColor: '#1d1d1f', 
+                drawingWidth: 16 
+            });
+            
+            if(currentMode==='strokes') { 
+                hanziWriterInstance.setCharacter(c).then(() => { 
+                    const n = basicStrokes[currentItemIndex].num; 
+                    setTimeout(() => {
+                        hanziWriterInstance.animateStroke(n); 
+                    }, 150); 
+                }); 
+            }
+        }
+
+        function animateCharacter() { 
+            if(hanziWriterInstance) { 
+                document.getElementById('feedback-msg').innerText = 'Observando animação...'; 
+                hanziWriterInstance.cancelQuiz(); 
+                
+                if (currentMode === 'strokes') {
+                    const n = basicStrokes[currentItemIndex].num;
+                    hanziWriterInstance.hideCharacter(); 
+                    hanziWriterInstance.animateStroke(n); 
+                } else {
+                    hanziWriterInstance.showCharacter();
+                    hanziWriterInstance.animateCharacter(); 
+                }
+            } 
+        }
+        
+        function startQuiz() { if(hanziWriterInstance) { document.getElementById('feedback-msg').innerText = 'Desenhe o 1º traço!'; hanziWriterInstance.quiz({ onMistake: (d) => document.getElementById('feedback-msg').innerText = `Erro. (Total: ${d.mistakesOnStroke})`, onCorrectStroke: () => document.getElementById('feedback-msg').innerText = 'Certo! Próximo...', onComplete: () => { document.getElementById('feedback-msg').innerText = 'Concluído!'; document.getElementById('btn-practice').classList.add('pulse-light'); } }); } }
+        function showOutline() { if(hanziWriterInstance) hanziWriterInstance.showOutline(); }
+        function hideOutline() { if(hanziWriterInstance) hanziWriterInstance.hideOutline(); }
+        
+        function toggleMobileSidebar() { 
+            document.getElementById('sidebar').classList.toggle('-translate-x-full'); 
+            const overlay = document.getElementById('mobile-overlay');
+            overlay.classList.toggle('opacity-0');
+            overlay.classList.toggle('pointer-events-none');
+        }
+        
+        function toggleDesktopSidebar() { isDesktopSidebarOpen = !isDesktopSidebarOpen; document.getElementById('sidebar').classList.toggle('desktop-closed', !isDesktopSidebarOpen); document.getElementById('btn-reopen-desktop').classList.toggle('hidden', isDesktopSidebarOpen); }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
